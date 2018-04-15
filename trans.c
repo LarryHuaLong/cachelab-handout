@@ -51,50 +51,51 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
         {
             for (n = 0; n < 8; n++) //cross stroe
             {
-                for (i = 0; i < 8; i++)
+                for (i = 0; i < 4; i++)
                 {
                     for (j = 0; j < 8; j++)
-                    {
                         temp[j] = A[m * 8 + i][n * 8 + j];
-                    }
-                    for (j = 0; j < 8; j++)
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + j][m * 8 + i] = temp[j];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + j][m * 8 + i + 4] = temp[j + 4];
+                }
+                for (i = 0; i < 4; i++)
+                {
+                    for (j = 0; j < 4; j++)
+                        temp[j + 4] = A[m * 8 + j + 4][n * 8 + i];
+                    for (j = 0; j < 4; j++)
+                        temp[j] = B[n * 8 + i][m * 8 + j + 4];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + i][m * 8 + j + 4] = temp[j + 4];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + i + 4][m * 8 + j] = temp[j];
+                    for (j = 0; j < 4; j++)
                     {
-                        B[n * 8 + j][((m + j) % 8) * 8 + i] = temp[j];
+                        if (i == j)
+                            continue;
+                        else
+                            B[n * 8 + i + 4][m * 8 + j + 4] = A[m * 8 + j + 4][n * 8 + i + 4];
                     }
                 }
-            }
-        }
-
-        for (m = 0; m < 64; m++) //Corrected cross store
-        {
-            n = m % 8;
-            if (n == 0)
-                continue;
-            for (i = 0; i < n; i++)
-            {
-                for (j = 0; j < 8; j++)
-                {
-                    temp[j] = B[m][j];
-                }
-                for (j = 0; j < 56; j++)
-                {
-                    B[m][j] = B[m][j + 8];
-                }
-                for (j = 56; j < 64; j++)
-                {
-                    B[m][j] = temp[j - 56];
-                }
+                for (i = 0; i < 4; i++)
+                    B[n * 8 + i + 4][m * 8 + i + 4] = A[m * 8 + i + 4][n * 8 + i + 4];
             }
         }
     }
     else
     {
-        for (i = 0; i < N; i++)
+        for (m = 0; m < N; m += 16)
         {
-            for (j = 0; j < M; j++)
+            for (n = 0; n < M; n += 16)
             {
-                temp[0] = A[i][j];
-                B[j][i] = temp[0];
+                for (i = m; i < m + 16 && i < N; i++)
+                {
+                    for (j = n; j < n + 16 && j < M; j++)
+                    {
+                        B[j][i] = A[i][j];
+                    }
+                }
             }
         }
     }
@@ -128,6 +129,7 @@ char trans_desc_test[] = "trans_test, don't consider temp[0]";
 void trans_test(int M, int N, int A[N][M], int B[M][N])
 {
     int m, n, i, j;
+    int temp[8];
     if (M == 32 && N == 32)
     {
         for (m = 0; m < 4; m++)
@@ -146,24 +148,51 @@ void trans_test(int M, int N, int A[N][M], int B[M][N])
     }
     else if (M == 64 && N == 64)
     {
-        int m, n, i, j;
-
-        for (m = 0; m < 16; m++)
+        for (m = 0; m < 8; m++)
         {
-            for (n = 0; n < 16; n++)
+            for (n = 0; n < 8; n++) //cross stroe
             {
-                int temp[0]; //store numbers at temp[0]
+                for (i = 0; i < 4; i++)
+                {
+                    for (j = 0; j < 8; j++)
+                        temp[j] = A[m * 8 + i][n * 8 + j];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + j][m * 8 + i] = temp[j];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + j][m * 8 + i + 4] = temp[j + 4];
+                }
                 for (i = 0; i < 4; i++)
                 {
                     for (j = 0; j < 4; j++)
+                        temp[j + 4] = A[m * 8 + j + 4][n * 8 + i];
+                    for (j = 0; j < 4; j++)
+                        temp[j] = B[n * 8 + i][m * 8 + j + 4];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + i][m * 8 + j + 4] = temp[j + 4];
+                    for (j = 0; j < 4; j++)
+                        B[n * 8 + i + 4][m * 8 + j] = temp[j];
+                    for (j = 0; j < 4; j++)
                     {
                         if (i == j)
-                            temp[0] = A[m * 4 + i][n * 4 + j];
+                            continue;
                         else
-                            B[n * 4 + j][m * 4 + i] = A[m * 4 + i][n * 4 + j];
+                            B[n * 8 + i + 4][m * 8 + j + 4] = A[m * 8 + j + 4][n * 8 + i + 4];
                     }
-                    B[n * 4 + i][m * 4 + i] = temp[0];
                 }
+                for (i = 0; i < 4; i++)
+                    temp[i] = A[m * 8 + i + 4][n * 8 + i + 4];
+                for (i = 0; i < 4; i++)
+                    B[n * 8 + i + 4][m * 8 + i + 4] = temp[i];
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < N; i++)
+        {
+            for (j = 0; j < M; j++)
+            {
+                B[j][i] = A[i][j];
             }
         }
     }
