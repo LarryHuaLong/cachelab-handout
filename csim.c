@@ -46,6 +46,7 @@ typedef cache_set_t *cache_t;
 
 /* Globals set by command line args */
 int verbosity = 0; /* print trace if set */
+int detial = 0;    /* print eviction detial if set */
 int s = 0;         /* set index bits */
 int b = 0;         /* block offset bits */
 int E = 0;         /* associativity */
@@ -111,6 +112,8 @@ void accessData(mem_addr_t addr)
     unsigned long long int eviction_lru = 0;
     unsigned int eviction_line = 0;
     mem_addr_t set_index = (addr >> b) & set_index_mask;
+    if (detial)
+        set_index = (set_index + 21) % 32;
     mem_addr_t tag = addr >> (s + b);
     cache_set_t cache_set = cache[set_index];
 
@@ -122,7 +125,27 @@ void accessData(mem_addr_t addr)
             if (cache_set[i].tag == tag)
             { //命中
                 if (verbosity)
-                    printf(" hit");
+                {
+                    if (detial)
+                    {
+                        if ((addr >> 16) == 0x60)
+                        {
+                            int Ai = (addr - 0x603160) >> 8;
+                            int Aj = ((addr - 0x603160) >> 2) % 64;
+                            printf(" hit index %Lu, A[%d][%d]", set_index, Ai, Aj / 8);
+                        }
+                        else if ((addr >> 16) == 0x64)
+                        {
+                            int Bi = (addr - 0x643160) >> 8;
+                            int Bj = ((addr - 0x643160) >> 2) % 64;
+                            printf(" hit index %Lu, B[%d][%d]", set_index, Bi, Bj / 8);
+                        }
+                        else
+                            printf(" hit index %Lu, addr: %llu ", set_index, addr);
+                    }
+                    else
+                        printf(" hit");
+                }
                 hit_count++;
                 cache_set[i].lru = 0;
                 return;
@@ -130,7 +153,12 @@ void accessData(mem_addr_t addr)
     }
     //不命中
     if (verbosity)
-        printf(" miss");
+    {
+        if (detial)
+            printf(" miss index %llu", set_index);
+        else
+            printf(" miss");
+    }
     miss_count++;
     for (i = 0; i < E; i++)
     {
@@ -143,8 +171,53 @@ void accessData(mem_addr_t addr)
     if (cache_set[eviction_line].valid == 1)
     {
         if (verbosity)
-            printf(" eviction");
+        {
+            if (detial)
+            {
+                if ((addr >> 16) == 0x60)
+                {
+                    int Ai = (addr - 0x603160) >> 8;
+                    int Aj = ((addr - 0x603160) >> 2) % 64;
+                    printf(" evicted cache index %Lu with A[%d][%d]", set_index, Ai, Aj / 8);
+                }
+                else if ((addr >> 16) == 0x64)
+                {
+                    int Bi = (addr - 0x643160) >> 8;
+                    int Bj = ((addr - 0x643160) >> 2) % 64;
+                    printf(" evicted cache index %Lu with B[%d][%d]", set_index, Bi, Bj / 8);
+                }
+                else
+                    printf(" evicted cache index %Lu with addr: %llu ", set_index, addr);
+            }
+            else
+                printf(" eviction");
+        }
         eviction_count++;
+    }
+    else
+    {
+        if (verbosity)
+        {
+            if (detial)
+            {
+                if ((addr >> 16) == 0x60)
+                {
+                    int Ai = (addr - 0x603160) >> 8;
+                    int Aj = ((addr - 0x603160) >> 2) % 64;
+                    printf(" load to cache index %Lu with A[%d][%d]", set_index, Ai, Aj / 8);
+                }
+                else if ((addr >> 16) == 0x64)
+                {
+                    int Bi = (addr - 0x643160) >> 8;
+                    int Bj = ((addr - 0x643160) >> 2) % 64;
+                    printf(" load to cache index %Lu with B[%d][%d]", set_index, Bi, Bj / 8);
+                }
+                else
+                    printf(" load to index %llu with addr: %llu ", set_index, addr);
+            }
+            else
+                printf(" loaded to cache");
+        }
     }
     cache_set[eviction_line].valid = 1;
     cache_set[eviction_line].tag = tag;
@@ -178,10 +251,11 @@ void replayTrace(char *trace_fn)
  */
 void printUsage(char *argv[])
 {
-    printf("Usage: %s [-hv] -s <num> -E <num> -b <num> -t <file>\n", argv[0]);
+    printf("Usage: %s [-hvd] -s <num> -E <num> -b <num> -t <file>\n", argv[0]);
     printf("Options:\n");
     printf("  -h         Print this help message.\n");
     printf("  -v         Optional verbose flag.\n");
+    printf("  -d         show eviction detial.\n");
     printf("  -s <num>   Number of set index bits.\n");
     printf("  -E <num>   Number of lines per set.\n");
     printf("  -b <num>   Number of block offset bits.\n");
@@ -199,7 +273,7 @@ int main(int argc, char *argv[])
 {
     char c;
 
-    while ((c = getopt(argc, argv, "s:E:b:t:vh")) != -1)
+    while ((c = getopt(argc, argv, "s:E:b:t:vhd")) != -1)
     {
         switch (c)
         {
@@ -217,6 +291,9 @@ int main(int argc, char *argv[])
             break;
         case 'v':
             verbosity = 1;
+            break;
+        case 'd':
+            detial = 1;
             break;
         case 'h':
             printUsage(argv);

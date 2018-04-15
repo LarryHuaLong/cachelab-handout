@@ -37,3 +37,7 @@ test-csim*   Tests your cache simulator
 test-trans.c Tests your transpose function
 tracegen.c   Helper program used by test-trans
 traces/      Trace files used by test-csim.c
+
+•32×32: 8 points if m <300, 0 points if m >600
+•64×64: 8 points if m <1,300, 0 points if m >2,000
+•61×67: 10 points if m <2,000, 0 points if m >3,000

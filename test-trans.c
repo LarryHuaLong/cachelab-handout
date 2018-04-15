@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
     }
 
     /* Time out and give up after a while */
-    alarm(120);
+    alarm(240);
 
     /* Check the performance of the student's transpose function */
     eval_perf(5, 1, 5);
