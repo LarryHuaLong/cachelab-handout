@@ -41,3 +41,10 @@ traces/      Trace files used by test-csim.c
 •32×32: 8 points if m <300, 0 points if m >600
 •64×64: 8 points if m <1,300, 0 points if m >2,000
 •61×67: 10 points if m <2,000, 0 points if m >3,000
+    15:2023
+    16:1994
+    17:1952
+    18:1961
+    19:1979
+    20:2002
+    21:1957

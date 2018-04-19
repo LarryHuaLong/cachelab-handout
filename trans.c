@@ -49,7 +49,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
     {
         for (m = 0; m < 8; m++)
         {
-            for (n = 0; n < 8; n++) //cross stroe
+            for (n = 0; n < 8; n++)
             {
                 for (i = 0; i < 4; i++)
                 {
@@ -85,13 +85,13 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
     }
     else
     {
-        for (m = 0; m < N; m += 16)
+        for (m = 0; m < N; m += 17)
         {
-            for (n = 0; n < M; n += 16)
+            for (n = 0; n < M; n += 17)
             {
-                for (i = m; i < m + 16 && i < N; i++)
+                for (i = m; i < m + 17 && i < N; i++)
                 {
-                    for (j = n; j < n + 16 && j < M; j++)
+                    for (j = n; j < n + 17 && j < M; j++)
                     {
                         B[j][i] = A[i][j];
                     }
@@ -122,81 +122,6 @@ void trans(int M, int N, int A[N][M], int B[M][N])
     }
 }
 
-/* 
- * trans_test
- */
-char trans_desc_test[] = "trans_test, don't consider temp[0]";
-void trans_test(int M, int N, int A[N][M], int B[M][N])
-{
-    int m, n, i, j;
-    int temp[8];
-    if (M == 32 && N == 32)
-    {
-        for (m = 0; m < 4; m++)
-        {
-            for (n = 0; n < 4; n++)
-            {
-                for (i = 0; i < 8; i++)
-                {
-                    for (j = 0; j < 8; j++)
-                    {
-                        B[n * 8 + j][m * 8 + i] = A[m * 8 + i][n * 8 + j];
-                    }
-                }
-            }
-        }
-    }
-    else if (M == 64 && N == 64)
-    {
-        for (m = 0; m < 8; m++)
-        {
-            for (n = 0; n < 8; n++) //cross stroe
-            {
-                for (i = 0; i < 4; i++)
-                {
-                    for (j = 0; j < 8; j++)
-                        temp[j] = A[m * 8 + i][n * 8 + j];
-                    for (j = 0; j < 4; j++)
-                        B[n * 8 + j][m * 8 + i] = temp[j];
-                    for (j = 0; j < 4; j++)
-                        B[n * 8 + j][m * 8 + i + 4] = temp[j + 4];
-                }
-                for (i = 0; i < 4; i++)
-                {
-                    for (j = 0; j < 4; j++)
-                        temp[j + 4] = A[m * 8 + j + 4][n * 8 + i];
-                    for (j = 0; j < 4; j++)
-                        temp[j] = B[n * 8 + i][m * 8 + j + 4];
-                    for (j = 0; j < 4; j++)
-                        B[n * 8 + i][m * 8 + j + 4] = temp[j + 4];
-                    for (j = 0; j < 4; j++)
-                        B[n * 8 + i + 4][m * 8 + j] = temp[j];
-                    for (j = 0; j < 4; j++)
-                    {
-                        if (i == j)
-                            continue;
-                        else
-                            B[n * 8 + i + 4][m * 8 + j + 4] = A[m * 8 + j + 4][n * 8 + i + 4];
-                    }
-                }
-                for (i = 0; i < 4; i++)
-                    temp[i] = A[m * 8 + i + 4][n * 8 + i + 4];
-                for (i = 0; i < 4; i++)
-                    B[n * 8 + i + 4][m * 8 + i + 4] = temp[i];
-            }
-        }
-    }
-    else
-    {
-        for (i = 0; i < N; i++)
-        {
-            for (j = 0; j < M; j++)
-            {
-                B[j][i] = A[i][j];
-            }
-        }
-    }
-}
 
 /*
  * registerFunctions - This function registers your transpose
@@ -209,8 +134,6 @@ void registerFunctions()
 {
     /* Register your solution function */
     registerTransFunction(transpose_submit, transpose_submit_desc);
-
-    registerTransFunction(trans_test, trans_desc_test);
 
     /* Register any additional transpose functions */
     //registerTransFunction(trans, trans_desc);
