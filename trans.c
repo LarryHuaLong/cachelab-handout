@@ -24,13 +24,10 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
     int m, n, i, j;
     int temp[8]; //store numbers at temp[0]
-
     if (M == 32 && N == 32)
-    {
+    { /*分成4*4*8*8，每次转置一个8*8矩阵块*/
         for (m = 0; m < 4; m++)
-        {
             for (n = 0; n < 4; n++)
-            {
                 for (i = 0; i < 8; i++)
                 {
                     for (j = 0; j < 8; j++)
@@ -42,13 +39,10 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                     }
                     B[n * 8 + i][m * 8 + i] = temp[0];
                 }
-            }
-        }
     }
     else if (M == 64 && N == 64)
-    {
+    {/*分成8*8*8*8，每次转置一个8*8矩阵，且每次转置采用左下角4*4暂存的算法*/
         for (m = 0; m < 8; m++)
-        {
             for (n = 0; n < 8; n++)
             {
                 for (i = 0; i < 4; i++)
@@ -81,23 +75,14 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
                 for (i = 0; i < 4; i++)
                     B[n * 8 + i + 4][m * 8 + i + 4] = A[m * 8 + i + 4][n * 8 + i + 4];
             }
-        }
     }
-    else
-    {
+    else /*其他情况*/
+    {/*经多次尝试，发现没17个元素分为一组，淘汰次数最低*/
         for (m = 0; m < N; m += 17)
-        {
             for (n = 0; n < M; n += 17)
-            {
                 for (i = m; i < m + 17 && i < N; i++)
-                {
                     for (j = n; j < n + 17 && j < M; j++)
-                    {
                         B[j][i] = A[i][j];
-                    }
-                }
-            }
-        }
     }
 }
 /* 
@@ -121,7 +106,6 @@ void trans(int M, int N, int A[N][M], int B[M][N])
         }
     }
 }
-
 
 /*
  * registerFunctions - This function registers your transpose

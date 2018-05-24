@@ -115,24 +115,24 @@ void accessData(mem_addr_t addr)
     cache_set_t cache_set = cache[set_index];
 
     for (i = 0; i < E; i++)
-        cache_set[i].lru++;
-    for (i = 0; i < E; i++)
+        cache_set[i].lru++;//先对所有行的LRU计数加一
+    for (i = 0; i < E; i++)//遍历所有行，查找当前地址访问是否命中Cache
     {
         if (cache_set[i].valid == 1)
             if (cache_set[i].tag == tag)
             { //命中
                 if (verbosity)
                     printf(" hit");
-                hit_count++;
-                cache_set[i].lru = 0;
+                hit_count++;//命中次数加一
+                cache_set[i].lru = 0;//命中的行LRU计数置为0
                 return;
             }
     }
-    //不命中
+    //前面未返回说明没有命中Cache
     if (verbosity)
         printf(" miss");
-    miss_count++;
-    for (i = 0; i < E; i++)
+    miss_count++;//不命中次数加一
+    for (i = 0; i < E; i++)//寻找LRU计数值最大的行
     {
         if (cache_set[i].lru > eviction_lru)
         {
@@ -140,15 +140,15 @@ void accessData(mem_addr_t addr)
             eviction_line = i;
         }
     }
-    if (cache_set[eviction_line].valid == 1)
+    if (cache_set[eviction_line].valid == 1)//淘汰LRU计数值最大的行
     {
         if (verbosity)
             printf(" eviction");
-        eviction_count++;
+        eviction_count++;//淘汰次数加一
     }
     cache_set[eviction_line].valid = 1;
-    cache_set[eviction_line].tag = tag;
-    cache_set[eviction_line].lru = 0; //set lru of new addr to 1
+    cache_set[eviction_line].tag = tag;//更新新行的tag字段
+    cache_set[eviction_line].lru = 0; //把新行的LRU计数值置位0
 }
 
 /*
@@ -159,14 +159,14 @@ void replayTrace(char *trace_fn)
     char buf[100];
     mem_addr_t addr = 0;
     unsigned int len = 0;
-    FILE *trace_fp = fopen(trace_fn, "r");
+    FILE *trace_fp = fopen(trace_fn, "r");//打开trace文件
     while (0 < fscanf(trace_fp, "%s%Lx,%u", buf, &addr, &len))
     {
-        printf("%s %Lx,%u", buf, addr, len);
-        if (buf[0] == 'I')
+        printf("%s %Lx,%u", buf, addr, len);//输出解析出的行信息
+        if (buf[0] == 'I')//如果是取址，则跳过
             continue;
         accessData(addr);
-        if (buf[0] == 'M')
+        if (buf[0] == 'M')//如果是修改数据，则需多加一次访问
             accessData(addr);
         putchar('\n');
     }
